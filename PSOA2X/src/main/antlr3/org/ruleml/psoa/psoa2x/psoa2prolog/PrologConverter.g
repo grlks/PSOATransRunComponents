@@ -111,10 +111,10 @@ formula
      existVars = null;
 }
     :   ^(AND
-             ({ append(numSubformulas++ == 0? "(" : ","); } formula )*
+             ({ append(numSubformulas++ == 0? "" : ","); } formula )*
          )
          {
-             append(numSubformulas > 0? ")" : "true");  // And() is translated to true    
+             append(numSubformulas > 0? "" : "true");  // And() is translated to true    
          }
     |   ^(OR
             ({ append(numSubformulas++ == 0? "(" : ";"); } formula )*

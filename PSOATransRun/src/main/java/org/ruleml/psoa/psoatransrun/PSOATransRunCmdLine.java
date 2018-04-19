@@ -8,6 +8,7 @@ import org.ruleml.psoa.psoa2x.psoa2prolog.PrologTranslator;
 import org.ruleml.psoa.psoa2x.psoa2tptp.TPTPTranslator;
 import org.ruleml.psoa.psoatransrun.engine.ExecutionEngine;
 import org.ruleml.psoa.psoatransrun.prolog.XSBEngine;
+import org.ruleml.psoa.psoatransrun.prolog.ProvaEngine;
 import org.ruleml.psoa.psoatransrun.test.TestSuite;
 import org.ruleml.psoa.psoatransrun.tptp.VampirePrimeEngine;
 
@@ -155,6 +156,22 @@ public class PSOATransRunCmdLine {
 				engineConfig.transKBPath = transKBPath;
 				engineConfig.xsbFolderPath = xsbPath;
 				engine = new XSBEngine(engineConfig);
+				
+				if (timeout > 0)
+					printErrln("Ignore -t option: only applicable for the target language TPTP");
+			}
+			else if (lang.equalsIgnoreCase("prova"))
+			{
+				PrologTranslator.Config transConfig = new PrologTranslator.Config();
+				transConfig.setDynamicObj(dynamicObj);
+				transConfig.setOmitMemtermInNegativeAtoms(omitNegMem);
+				transConfig.setDifferentiateObj(differentiated);
+				transConfig.setReconstruct(reconstruct);
+				translator = new PrologTranslator(transConfig);
+				
+				ProvaEngine.Config engineConfig = new ProvaEngine.Config();
+				engineConfig.transKBPath = transKBPath;
+				engine = new ProvaEngine(engineConfig);
 				
 				if (timeout > 0)
 					printErrln("Ignore -t option: only applicable for the target language TPTP");
