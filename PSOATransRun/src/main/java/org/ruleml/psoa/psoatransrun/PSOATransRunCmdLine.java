@@ -8,7 +8,7 @@ import org.ruleml.psoa.psoa2x.psoa2prolog.PrologTranslator;
 import org.ruleml.psoa.psoa2x.psoa2tptp.TPTPTranslator;
 import org.ruleml.psoa.psoatransrun.engine.ExecutionEngine;
 import org.ruleml.psoa.psoatransrun.prolog.XSBEngine;
-import org.ruleml.psoa.psoatransrun.prolog.ProvaEngine;
+import org.ruleml.psoa.psoatransrun.prova.ProvaEngine;
 import org.ruleml.psoa.psoatransrun.test.TestSuite;
 import org.ruleml.psoa.psoatransrun.tptp.VampirePrimeEngine;
 

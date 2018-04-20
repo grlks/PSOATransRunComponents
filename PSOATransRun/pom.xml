@@ -36,6 +36,11 @@
 	        <artifactId>interprolog</artifactId>
 	        <version>2.5</version>
         </dependency>
+	<dependency>
+		<groupId>ws.prova</groupId>
+		<artifactId>ws.prova.compact</artifactId>
+		<version>3.2.2</version>
+	</dependency>
 	</dependencies>
 	<build>
 		<defaultGoal>install</defaultGoal>
