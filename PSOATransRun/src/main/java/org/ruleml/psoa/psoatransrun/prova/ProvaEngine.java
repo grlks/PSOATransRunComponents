@@ -97,7 +97,12 @@ public class ProvaEngine extends ReusableKBEngine {
 			// TODO: process exceptions
 		}
 	}
-	
+
+	/**
+	 * Returns a String containing the head of a query
+	 * @param queryVars List of Variable Names that should be assigned
+	 * @return String containing the head of a query
+	 */
 	public static String getQueryHead(List<String> queryVars) {
 		StringBuilder sb = new StringBuilder("query(");
 		String prefix = "";
@@ -124,6 +129,7 @@ public class ProvaEngine extends ReusableKBEngine {
 			m_communicator.consultSync(new BufferedReader( new StringReader(queryDef)), "queryDef", new Object[]{});
 
 			solutions = m_communicator.consultSync(new BufferedReader( new StringReader(queryGoal)), "queryGoal", new Object[]{});
+			// there is only one goal, so the solutions double-list should contain only one list
 			// org.junit.Assert.assertEquals(solutions.size(),1);
 			r =  new QueryResult(substitutionsFromSolutions(queryVars, solutions.get(0)));
 			
@@ -154,7 +160,7 @@ public class ProvaEngine extends ReusableKBEngine {
 	private static Substitution substitutionFromSolution(List<String> queryVars, ProvaSolution solution) {
 		Substitution answer = new Substitution();
 		for(String queryVar : queryVars) {
-			String value = solution.getNv(queryVar).toString();
+			String value = "'" + solution.getNv(queryVar).toString() + "'";
 			answer.addPair(queryVar, value);
 		}
 		return answer;
