@@ -175,7 +175,7 @@ public class PSOATransRun {
 		}
 		else
 		{
-			throw new PSOATransRunException("Unsupported KB file extension");
+			throw new PSOATransRunException("Unsupported KB file extension: " + path);
 		}
 	}
 	

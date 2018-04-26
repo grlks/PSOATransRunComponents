@@ -14,12 +14,14 @@ import org.ruleml.psoa.psoatransrun.AnswerIterator;
 import org.ruleml.psoa.psoatransrun.PSOATransRunException;
 import org.ruleml.psoa.psoatransrun.QueryResult;
 import org.ruleml.psoa.psoatransrun.Substitution;
+import org.ruleml.psoa.psoatransrun.SubstitutionSet;
 import org.ruleml.psoa.psoatransrun.engine.ReusableKBEngine;
 import org.ruleml.psoa.psoatransrun.engine.EngineConfig;
 
 import ws.prova.api2.ProvaCommunicator;
 import ws.prova.api2.ProvaCommunicatorImpl;
 import ws.prova.exchange.ProvaSolution;
+import ws.prova.parser2.ProvaParsingException;
 
 public class ProvaEngine extends ReusableKBEngine {
 	private File m_transKBFile;
@@ -49,9 +51,7 @@ public class ProvaEngine extends ReusableKBEngine {
 	 * @param delayStart    if true, start the engine at initialization time; otherwise, start the engine when KB is loaded
 	 * */
 	public ProvaEngine(Config config, boolean delayStart) {
-		System.out.println("Prova demo.");
-		System.out.println("Every query will be answered with No!");
-		System.out.println("Prova is not used yet, try to enter KB and queries manually into prova.");
+		System.out.println("Experimental Prova support");
 		
 		// Set translated KB
 		String transKBPath = config.transKBPath;
@@ -91,7 +91,6 @@ public class ProvaEngine extends ReusableKBEngine {
 		}
 		// call prova
 		m_kbBuffer = new BufferedReader( new StringReader(kb));
-		// m_kbBuffer = new StringBuffer(kb);
 		try {
 			m_communicator = new ProvaCommunicatorImpl(kAgent, kPort, m_kbBuffer, ProvaCommunicatorImpl.SYNC);
 		} catch (Exception e) {
@@ -110,59 +109,54 @@ public class ProvaEngine extends ReusableKBEngine {
 		sb.append(")");
 		return sb.toString();
 	}
-
-	/*
-	private static class PrologAnswerIterator extends AnswerIterator {
-		private List<String> m_vars;
-		
-		public PrologAnswerIterator(ProvaSolution[] solution, List<String> vars) {
-			m_solution = solution;
-			m_vars = vars;
-		}
-		
-		@Override
-		public boolean hasNext() {
-			return hasNext();
-		}
-
-		@Override
-		public Substitution next() {
-			return createSubstitution(m_vars, (TermModel)m_iter.next()[0]);
-		}
-
-		@Override
-		public void dispose() {
-			m_iter.cancel();
-		}
-	}*/
 	
 	@Override
 	public QueryResult executeQuery(String query, List<String> queryVars, boolean getAllAnswers) {
 		String queryHead = getQueryHead(queryVars);
 		List<ProvaSolution[]> solutions;
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append(queryHead).append(":-").append(query);
-		sb.append("\nsolve(").append(queryHead).append(").");
-		
-		System.out.println(sb);
+		QueryResult r;
 
-		BufferedReader provaQuery = new BufferedReader( new StringReader(sb.toString()));
+		// query already ends with "."
+		String queryDef = queryHead + " :- " + query;
+		String queryGoal = ":- solve(" + queryHead + ").";
 		
 		try {
-			solutions = m_communicator.consultSync(provaQuery, "dissemination‐rules", new Object[]{});
+			m_communicator.consultSync(new BufferedReader( new StringReader(queryDef)), "queryDef", new Object[]{});
+
+			solutions = m_communicator.consultSync(new BufferedReader( new StringReader(queryGoal)), "queryGoal", new Object[]{});
 			// org.junit.Assert.assertEquals(solutions.size(),1);
+			r =  new QueryResult(substitutionsFromSolutions(queryVars, solutions.get(0)));
 			
+			m_communicator.unconsultSync("queryGoal");
+			m_communicator.unconsultSync("queryDef");
 		} catch (Exception e) {
 			// TODO: process exceptions
 			System.out.println("exception!");
+			if (e.getCause() != null )
+				System.out.println(e.getCause().getLocalizedMessage());
+			if (e.getCause() instanceof ProvaParsingException)
+				System.out.println(((ProvaParsingException) e.getCause()).getSource());
+			r = new QueryResult(false);
 		}
-		// TODO: Process solutions
-		// Answer: "No"
-		QueryResult r = new QueryResult(false);
 		return r;
 	}
 
+	private static SubstitutionSet substitutionsFromSolutions(List<String> queryVars, ProvaSolution[] solutions) {
+		SubstitutionSet answers = new SubstitutionSet();
 
+		for (ProvaSolution solution : solutions) {
+			Substitution answer = substitutionFromSolution(queryVars, solution);
+			answers.add(answer);
+		}
+		return answers;
+	}
 
+	private static Substitution substitutionFromSolution(List<String> queryVars, ProvaSolution solution) {
+		Substitution answer = new Substitution();
+		for(String queryVar : queryVars) {
+			String value = solution.getNv(queryVar).toString();
+			answer.addPair(queryVar, value);
+		}
+		return answer;
+	}
 }
