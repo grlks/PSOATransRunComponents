@@ -51,7 +51,7 @@ public class ProvaEngine extends ReusableKBEngine {
 	 * @param delayStart    if true, start the engine at initialization time; otherwise, start the engine when KB is loaded
 	 * */
 	public ProvaEngine(Config config, boolean delayStart) {
-		System.out.println("Experimental Prova support");
+		System.err.println("Experimental Prova support");
 		
 		// Set translated KB
 		String transKBPath = config.transKBPath;
@@ -94,12 +94,12 @@ public class ProvaEngine extends ReusableKBEngine {
 		try {
 			m_communicator = new ProvaCommunicatorImpl(kAgent, kPort, m_kbBuffer, ProvaCommunicatorImpl.SYNC);
 		} catch (Exception e) {
-			// TODO: process exceptions
+			throw new PSOATransRunException(e);
 		}
 	}
 
 	/**
-	 * Returns a String containing the head of a query
+	 * Returns the head of a query rule as used by Prova "query(Q1, Q2, ..., Qx)"
 	 * @param queryVars List of Variable Names that should be assigned
 	 * @return String containing the head of a query
 	 */
@@ -129,19 +129,18 @@ public class ProvaEngine extends ReusableKBEngine {
 			m_communicator.consultSync(new BufferedReader( new StringReader(queryDef)), "queryDef", new Object[]{});
 
 			solutions = m_communicator.consultSync(new BufferedReader( new StringReader(queryGoal)), "queryGoal", new Object[]{});
-			// there is only one goal, so the solutions double-list should contain only one list
+			// there is one goal, so the solutions double-list should contain exactly one list
 			// org.junit.Assert.assertEquals(solutions.size(),1);
 			r =  new QueryResult(substitutionsFromSolutions(queryVars, solutions.get(0)));
 			
 			m_communicator.unconsultSync("queryGoal");
 			m_communicator.unconsultSync("queryDef");
 		} catch (Exception e) {
-			// TODO: process exceptions
-			System.out.println("exception!");
+			System.err.println("Exception in Prova executeQuery!");
 			if (e.getCause() != null )
-				System.out.println(e.getCause().getLocalizedMessage());
+				System.err.println(e.getCause().getLocalizedMessage());
 			if (e.getCause() instanceof ProvaParsingException)
-				System.out.println(((ProvaParsingException) e.getCause()).getSource());
+				System.err.println(((ProvaParsingException) e.getCause()).getSource());
 			r = new QueryResult(false);
 		}
 		return r;
@@ -149,7 +148,7 @@ public class ProvaEngine extends ReusableKBEngine {
 
 	private static SubstitutionSet substitutionsFromSolutions(List<String> queryVars, ProvaSolution[] solutions) {
 		SubstitutionSet answers = new SubstitutionSet();
-
+		// one Prova solution corresponds to one PSOA answer
 		for (ProvaSolution solution : solutions) {
 			Substitution answer = substitutionFromSolution(queryVars, solution);
 			answers.add(answer);
@@ -157,6 +156,7 @@ public class ProvaEngine extends ReusableKBEngine {
 		return answers;
 	}
 
+	// Process one solution
 	private static Substitution substitutionFromSolution(List<String> queryVars, ProvaSolution solution) {
 		Substitution answer = new Substitution();
 		for(String queryVar : queryVars) {
@@ -164,5 +164,11 @@ public class ProvaEngine extends ReusableKBEngine {
 			answer.addPair(queryVar, value);
 		}
 		return answer;
+	}
+
+	@Override
+	public void shutdown() {
+		// FIXME: difference between m_communicator.stop() and m_communicator.shutdown()?
+		m_communicator.stop();
 	}
 }
