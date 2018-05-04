@@ -12,7 +12,26 @@ import org.ruleml.psoa.psoa2x.common.*;
 public class PrologTranslator extends ANTLRBasedTranslator {
 	Config m_config;
 	
-	public static class Config extends RelationalTranslatorConfig { }
+	public static class Config extends RelationalTranslatorConfig {
+		private boolean m_prova_tabling;
+		
+		public boolean provaTablingEnabled() {
+			return m_prova_tabling;
+		}
+		
+		public Config() {
+			/* m_prova_tabling must be false when the language is not Prova! */
+			this(false);
+		}
+		
+		/**
+		 * Constructor for the translator targeting Prova prolog
+		 * @param prova_tabling experimental tabling with the cache/1 predicate
+		 */
+		public Config(boolean prova_tabling) {
+			m_prova_tabling = prova_tabling;
+		}
+	}
 	
 	public PrologTranslator()
 	{

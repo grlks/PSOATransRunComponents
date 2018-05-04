@@ -51,7 +51,8 @@ public class PSOATransRunCmdLine {
 
 		boolean outputTrans = false, showOrigKB = false, getAllAnswers = false, 
 				dynamicObj = true, omitNegMem = false, differentiated = true,
-				isTest = false, dense = false, verbose = false, reconstruct = true;
+				isTest = false, dense = false, verbose = false, reconstruct = true,
+				provaTabling = false;
 		String inputKBPath = null, inputQueryPath = null, lang = null, transKBPath = null, xsbPath = null;
 		int timeout = -1, numRuns = 1;
 		
@@ -160,9 +161,11 @@ public class PSOATransRunCmdLine {
 				if (timeout > 0)
 					printErrln("Ignore -t option: only applicable for the target language TPTP");
 			}
-			else if (lang.equalsIgnoreCase("prova"))
+			else if (lang.equalsIgnoreCase("prova") || lang.equalsIgnoreCase("prova-tabling"))
 			{
-				PrologTranslator.Config transConfig = new PrologTranslator.Config();
+				if (lang.equalsIgnoreCase("prova-tabling"))
+					provaTabling = true;
+				PrologTranslator.Config transConfig = new PrologTranslator.Config(provaTabling);
 				transConfig.setDynamicObj(dynamicObj);
 				transConfig.setOmitMemtermInNegativeAtoms(omitNegMem);
 				transConfig.setDifferentiateObj(differentiated);

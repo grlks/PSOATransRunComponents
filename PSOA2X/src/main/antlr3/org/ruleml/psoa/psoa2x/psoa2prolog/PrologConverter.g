@@ -28,6 +28,7 @@ options
 {
     private enum TermType { CONST, VAR, FUNC_INTERNAL, FUNC_EXTERNAL };
     private PrologTranslator.Config m_config;
+    private boolean useProvaCacheBuiltin = false;
        
     public PrologConverter(TreeNodeStream input, PrologTranslator.Config config) {
         this(input);
@@ -76,7 +77,7 @@ scope
    $varMap = ($query::freeVarMap = new LinkedHashMap<String, String>());
    $query::existVars = new HashSet<String>();
 }
-    :   formula
+    :   body
     // output translated query
     {
        append(".");
@@ -90,12 +91,27 @@ rule
     ;
 
 clause
-    :   ^(IMPLICATION head { append(" :- "); } formula)
+    :   ^(IMPLICATION head { append(" :- "); } body)
     |   head
     ;
 
 head
     :   atomic   // head can only be atomic in the LP-normalized PSOA input
+    ;
+
+body
+@init
+{
+   // the cache/1 predicate must not be outside a rule body
+   if (m_config.provaTablingEnabled()) {
+     useProvaCacheBuiltin = true;
+   }
+}
+@after
+{
+    useProvaCacheBuiltin = false;
+}
+    :   formula
     ;
 
 formula
@@ -197,7 +213,6 @@ psoa
 {
    BufferIndex startIdx = null;
    boolean isOidful = false;
-   
 }
 @after
 {
@@ -233,10 +248,11 @@ psoa
               {
                  if (isOidful)
                  {
+                    // The leading space is a placeholder for the prova cache/1 builtin!
                     if ($tuple.isDependent)
-    	               replace(startIdx, 7, "prdtupterm");
+                       replace(startIdx, 7, "      prdtupterm");
                     else
-                       replace(startIdx, 7, "tupterm");
+                       replace(startIdx, 7, "      tupterm");
                  }
                  
                  if (peekEnd(1).equals("("))  // Since ISO Prolog uses op instead of op(): trim previous '(' and do not append ')'
@@ -249,9 +265,9 @@ psoa
                  if (isOidful)
                  {
                     if ($slot.isDependent)
-    	               replace(startIdx, 7, "prdsloterm");
+                       replace(startIdx, 7, "      prdsloterm");
                     else
-                       replace(startIdx, 7, "sloterm");
+                       replace(startIdx, 7, "      sloterm");
                  }
                  append(")");
               }
@@ -260,7 +276,7 @@ psoa
 			      if ($op.isTop)
 			      {
 				     // Tautology, o#Top
-			         replace(startIdx, "true");
+                     replace(startIdx, " true");
 		          }
 			      else
 			      {
@@ -269,7 +285,7 @@ psoa
 		               // Class membership
 		               trimEnd(1);
 		               append(")");
-		               replace(startIdx, 7, "memterm");
+                       replace(startIdx, 7, "      memterm");
 		             }
 		             else
 		             {
@@ -278,6 +294,17 @@ psoa
 		          }
 			  }
            )
+           {
+             // tabling for prova with cache/1
+             if (isOidful) {
+               if (useProvaCacheBuiltin) {
+                 replace(startIdx, 6, "cache(");
+                 append(")");
+               } else {
+                 replace(startIdx, 6, "");
+               }
+             }
+           }
         )
     ;
 
