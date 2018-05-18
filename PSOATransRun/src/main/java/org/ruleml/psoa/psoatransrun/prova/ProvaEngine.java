@@ -169,6 +169,7 @@ public class ProvaEngine extends ReusableKBEngine {
 	@Override
 	public void shutdown() {
 		// FIXME: difference between m_communicator.stop() and m_communicator.shutdown()?
-		m_communicator.stop();
+		if (m_communicator != null)
+			m_communicator.stop();
 	}
 }

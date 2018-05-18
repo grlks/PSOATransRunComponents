@@ -157,6 +157,7 @@ scope
 
 clause
     :   ^(IMPLICATION head { $rule::isRuleBody = true; } formula { $rule::isRuleBody = false; })
+    |   ^(PRODUCTION  head { $rule::isRuleBody = true; } formula { $rule::isRuleBody = false; })
     |   head
     ;
     

@@ -169,6 +169,7 @@ rule
 
 clause
     :   ^(IMPLICATION head { m_isRuleBody = true; } formula { m_isRuleBody = false; })
+    |   ^(PRODUCTION  head { m_isRuleBody = true; } formula { m_isRuleBody = false; })
     |   { m_isGroundFact = m_clauseVars.isEmpty(); } head { m_isGroundFact = false; }
     ;
     

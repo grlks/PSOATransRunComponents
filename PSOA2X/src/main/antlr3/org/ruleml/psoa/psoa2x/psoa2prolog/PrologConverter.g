@@ -93,7 +93,27 @@ rule
 clause
     :   ^(IMPLICATION head { append(" :- "); } body)
     |   head
-    ;
+    |   ^(PRODUCTION h=production_head { append(" :- "); } body
+			{
+				append(",asserta(");
+				append($h.headAsString);
+				append(")");
+			}
+		)
+	;
+
+production_head returns [String headAsString]
+@init
+{
+	BufferIndex startIdx = getBufferIndex();
+}
+@after
+{
+	$headAsString = peekEnd(startIdx);
+	startIdx.dispose();
+}
+	:   head
+	;
 
 head
     :   atomic   // head can only be atomic in the LP-normalized PSOA input

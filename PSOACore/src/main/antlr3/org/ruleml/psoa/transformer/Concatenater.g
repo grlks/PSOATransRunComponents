@@ -71,6 +71,7 @@ rule
 
 clause
     :   ^(IMPLICATION head formula)
+    |   ^(PRODUCTION  head formula)
     |   head
     ;
     

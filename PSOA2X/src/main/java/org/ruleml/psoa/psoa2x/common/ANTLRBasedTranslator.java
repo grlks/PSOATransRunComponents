@@ -181,6 +181,10 @@ public abstract class ANTLRBasedTranslator extends Translator {
 			return m_buffer.substring(m_buffer.length() - len);
 		}
 		
+		protected String peekEnd(BufferIndex startIndex) {
+			return m_buffer.substring(startIndex.value);
+		}
+		
 		protected void replace(BufferIndex startIndex, int offset, String s) {
 			int end = startIndex.value + offset;
 			m_buffer.replace(startIndex.value, end, s);

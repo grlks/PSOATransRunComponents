@@ -28,7 +28,7 @@ options
 
 @members
 {
-    private CommonTree splitRules(CommonTree head, CommonTree body)
+    private CommonTree splitRules(CommonTree head, CommonTree body, boolean production)
     {
         CommonTree root = (CommonTree)adaptor.nil();
         Map<Object, Set<String>> headConjuctVars = $clause::headConjuctVars;
@@ -39,7 +39,13 @@ options
         {
             i++;
             Set<String> conjunctVars = headConjuctVars.get(conjunct);
-            Object newImply = adaptor.create(IMPLICATION, ":-");
+            
+            Object newImply;
+            if (production) {
+            	newImply = adaptor.create(PRODUCTION,  "::-");
+            } else {
+            	newImply = adaptor.create(IMPLICATION, ":-");
+            }
             
             adaptor.addChild(newImply, conjunct);
             adaptor.addChild(newImply, i == 1? body : adaptor.dupTree(body));
@@ -136,8 +142,11 @@ scope
     $clause::headConjuctVars = null;
 }
     :   ^(IMPLICATION head[false] formula)
-    -> { $rule::hasConjuctiveHead }? { splitRules($head.tree, $formula.tree) }
+    -> { $rule::hasConjuctiveHead }? { splitRules($head.tree, $formula.tree, false) }
     -> ^(IMPLICATION head formula)
+    |   ^(PRODUCTION  head[false] formula)
+    -> { $rule::hasConjuctiveHead }? { splitRules($head.tree, $formula.tree, true) }
+    -> ^(PRODUCTION  head formula)
     |   head[false]
     ;
     

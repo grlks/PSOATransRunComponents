@@ -146,6 +146,9 @@ clause
     :  ^(IMPLICATION head formula)
     -> { $head.numExts == 0 }? ^(IMPLICATION head formula)
     -> ^(IMPLICATION head ^(AND formula { $head.eqTree }))
+    |  ^(PRODUCTION  head formula)
+    -> { $head.numExts == 0 }? ^(PRODUCTION head formula)
+    -> ^(PRODUCTION head ^(AND formula { $head.eqTree }))
     |  head
     -> { $head.numExts == 0 }? head
     -> { $head.numExts == 1 }? ^(IMPLICATION head { $head.eqTree })

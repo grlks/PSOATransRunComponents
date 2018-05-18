@@ -192,7 +192,8 @@ clause
     if (!$f1.isValidHead)
         throw new PSOARuntimeException("Unacceptable head formula:" + $f1.text);
 }
-    :   (f1=formula -> formula) (IMPLICATION f2=formula -> ^(IMPLICATION $clause $f2) )?
+    :   (f1=formula -> formula) ( IMPLICATION f2=formula -> ^(IMPLICATION $clause $f2) 
+    							| PRODUCTION  f2=formula -> ^(PRODUCTION  $clause $f2) )?
     ;
 
 formula returns [boolean isValidHead, boolean isAtomic]
@@ -353,6 +354,7 @@ TOP : 'Top';
 
 //   Operators:
 IMPLICATION : ':-';
+PRODUCTION : '::-';
 EQUAL : '=';
 SUBCLASS : '##';
 INSTANCE : '#';
