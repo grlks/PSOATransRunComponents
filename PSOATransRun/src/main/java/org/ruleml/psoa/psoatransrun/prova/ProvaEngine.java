@@ -17,15 +17,15 @@ import org.ruleml.psoa.psoatransrun.Substitution;
 import org.ruleml.psoa.psoatransrun.SubstitutionSet;
 import org.ruleml.psoa.psoatransrun.engine.ReusableKBEngine;
 import org.ruleml.psoa.psoatransrun.engine.EngineConfig;
+import org.ruleml.psoa.psoatransrun.engine.ExtendableKBEngine;
 
 import ws.prova.api2.ProvaCommunicator;
 import ws.prova.api2.ProvaCommunicatorImpl;
 import ws.prova.exchange.ProvaSolution;
 import ws.prova.parser2.ProvaParsingException;
 
-public class ProvaEngine extends ReusableKBEngine {
+public class ProvaEngine extends ExtendableKBEngine {
 	private File m_transKBFile;
-	private BufferedReader m_kbBuffer;
 	private ProvaCommunicator m_communicator;
 	static final String kAgent = "prova";
 	static final String kPort = null;
@@ -80,19 +80,29 @@ public class ProvaEngine extends ReusableKBEngine {
 	}
 
 	@Override
-	public void loadKB(String kb) {
-		try(PrintWriter writer = new PrintWriter(m_transKBFile))
-		{
-			writer.print(kb);
+	public void loadKB(String kb, boolean extendExistingKB) {
+		// An KB file is not needed by Prova!
+		if (false) {
+			try(PrintWriter writer = new PrintWriter(m_transKBFile))
+			{
+				writer.print(kb);
+			}
+			catch (FileNotFoundException e)
+			{
+				throw new PSOATransRunException(e);
+			}
 		}
-		catch (FileNotFoundException e)
-		{
-			throw new PSOATransRunException(e);
-		}
-		// call prova
-		m_kbBuffer = new BufferedReader( new StringReader(kb));
+
+		BufferedReader kbBuffer = new BufferedReader( new StringReader(kb));
+
 		try {
-			m_communicator = new ProvaCommunicatorImpl(kAgent, kPort, m_kbBuffer, ProvaCommunicatorImpl.SYNC);
+			if (extendExistingKB) {
+				// extend an existing kb with new data
+				m_communicator.consultSync(kbBuffer, "", new Object[]{});
+			} else {
+				// create a new Prova instance
+				m_communicator = new ProvaCommunicatorImpl(kAgent, kPort, kbBuffer, ProvaCommunicatorImpl.SYNC);
+			}
 		} catch (Exception e) {
 			throw new PSOATransRunException(e);
 		}

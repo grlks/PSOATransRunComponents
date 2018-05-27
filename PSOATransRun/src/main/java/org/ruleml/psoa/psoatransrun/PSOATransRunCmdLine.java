@@ -276,8 +276,33 @@ public class PSOATransRunCmdLine {
 					
 					String query = sc.nextLine();
 					try {
-						QueryResult result = system.executeQuery(query, getAllAnswers);
-						printQueryResult(result, getAllAnswers, sc);
+						if (query.startsWith("import")) {
+							// This is not really a query. The KB should be extended by
+							// a new KB file
+							inputKBPath = query.substring(7);
+
+							// Print input PSOA KB if requested
+							if (showOrigKB) {
+								println("Original KB:");
+								
+								try (BufferedReader reader = new BufferedReader(
+										new FileReader(inputKBPath))) {
+									String line;
+									while ((line = reader.readLine()) != null)
+										println(line);
+								}
+
+								println();
+							}
+							
+							// Load KB file
+							system.loadKBFromFile(inputKBPath, true);
+							println("KB Loaded. Enter Queries:");
+							println();
+						} else {
+							QueryResult result = system.executeQuery(query, getAllAnswers);
+							printQueryResult(result, getAllAnswers, sc);
+						}
 					}
 					// The catch part could be later refined with specific kinds of 
 					// exceptions that would not interfere future query executions, e.g.:
@@ -303,6 +328,10 @@ public class PSOATransRunCmdLine {
 		finally {
 			system.shutdown();
 		}
+	}
+	
+	private static void loadKB(PSOATransRun system, String inputKBPath, boolean showOrigKB, boolean extendExistingKB) {
+
 	}
 
 	private static void printQueryResult(QueryResult result,

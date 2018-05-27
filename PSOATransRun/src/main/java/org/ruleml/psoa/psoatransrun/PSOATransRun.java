@@ -105,7 +105,7 @@ public class PSOATransRun {
 	 * */
 	public void loadKB(InputStream in)
 	{
-		loadKB(in, false);
+		loadKB(in, false, false);
 	}
 	
 	/**
@@ -117,7 +117,7 @@ public class PSOATransRun {
 	 * */
 	public void loadKB(String kb)
 	{
-		loadKB(kb, false);
+		loadKB(kb, false, false);
 	}
 	
 	/**
@@ -128,7 +128,7 @@ public class PSOATransRun {
 	 * @param keepTransKB   whether to keep translated KB in the memory
 	 * 
 	 * */
-	public void loadKB(InputStream in, boolean keepTransKB)
+	public void loadKB(InputStream in, boolean keepTransKB, boolean extendExistingKB)
 	{
 		String transKB;
 
@@ -136,7 +136,7 @@ public class PSOATransRun {
 		transKB = m_translator.translateKB(in);
 		m_translateKBWatch.stop();
 		
-		loadTranslatedKB(transKB, keepTransKB);
+		loadTranslatedKB(transKB, keepTransKB, extendExistingKB);
 	}
 	
 	/**
@@ -147,7 +147,7 @@ public class PSOATransRun {
 	 * @param keepTransKB   whether to keep translated KB in the memory
 	 * 
 	 * */
-	public void loadKB(String kb, boolean keepTransKB)
+	public void loadKB(String kb, boolean keepTransKB, boolean extendExistingKB)
 	{
 		String transKB;
 
@@ -155,9 +155,9 @@ public class PSOATransRun {
 		transKB = m_translator.translateKB(kb);
 		m_translateKBWatch.stop();
 		
-		loadTranslatedKB(transKB, keepTransKB);
+		loadTranslatedKB(transKB, keepTransKB, extendExistingKB);
 	}
-	
+
 	/**
 	 * Load a KB file in PSOA presentation syntax into PSOATransRun. The KB is 
 	 * translated into the execution target language and prepared in the engine.
@@ -167,10 +167,23 @@ public class PSOATransRun {
 	 * */
 	public void loadKBFromFile(String path) throws IOException
 	{
+		loadKBFromFile(path, false);
+	}
+	
+	/**
+	 * Load a KB file in PSOA presentation syntax into PSOATransRun. The KB is 
+	 * translated into the execution target language and prepared in the engine.
+	 * 
+	 * @param path   path of input PSOA KB
+	 * @param extendExistingKB an existing KB should be extended by the new input PSOA KB
+	 * 
+	 * */
+	public void loadKBFromFile(String path, boolean extendExistingKB) throws IOException
+	{
 		if (path.endsWith(".psoa"))
 		{			
 			try (FileInputStream kbStream = new FileInputStream(path)) {
-				loadKB(kbStream);
+				loadKB(kbStream, false, extendExistingKB);
 			}
 		}
 		else
@@ -190,7 +203,7 @@ public class PSOATransRun {
 		return m_transKB;
 	}
 	
-	private void loadTranslatedKB(String transKB, boolean keepTransKB)
+	private void loadTranslatedKB(String transKB, boolean keepTransKB, boolean extendExistingKB)
 	{
 		if (m_printTrans)
 		{
@@ -198,16 +211,19 @@ public class PSOATransRun {
 			System.out.println(transKB);
 		}
 		
-		if (m_engine instanceof ReusableKBEngine)
-		{
-			((ReusableKBEngine) m_engine).loadKB(transKB);
-			if (keepTransKB)
-			{
+		if (extendExistingKB) {
+			((ExtendableKBEngine) m_engine).loadKB(transKB, true);
+			if (keepTransKB) {
 				m_transKB = transKB;
 			}
-		}
-		else
+		} else if (m_engine instanceof ReusableKBEngine) {
+			((ReusableKBEngine) m_engine).loadKB(transKB);
+			if (keepTransKB) {
+				m_transKB = transKB;
+			}
+		} else {
 			m_transKB = transKB;
+		}
 	}
 	
 	/**
