@@ -1,0 +1,25 @@
+% This is the unified version of a KB that consists of four KBs
+% RoyalFamily-KB0.psoa to RoyalFamily-KB3.psoa.
+% These KB files should be loaded in that order to represent a sequence
+% of states in the world.
+% A query RoyalFamily-queryi.psoa is written on the assumption, that the KBs
+% RoyalFamily-KB0.psoa to RoyalFamily-KBi.psoa are loaded.
+% For compatibility reasons, each query will be checked only against this KB
+% (this will change in future versions)!
+Document (
+  Group (
+    % Pure production rule for the succession to the British throne:
+    % A successor must be a child of a successor and both
+    % parents have to be (legitimately) married.
+    Forall ?Ch ?P1 ?P2 (
+      ?Ch#_successor ::-
+        And( ?Ch#_child( _biological_parent->?P1 _biological_parent->?P2 )
+             _legitimately_married( _partner+>?P1 _partner+>?P2 )
+             ?P1#_successor
+        )
+    )
+    _Alice#_successor
+    _legitimately_married( _partner+>_Alice _partner+>_Bob )
+    _Peter#_child( _biological_parent->_Alice _biological_parent->_Bob )
+  )
+)
