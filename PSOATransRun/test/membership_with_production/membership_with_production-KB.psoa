@@ -1,0 +1,16 @@
+% (pure) production rule with class membership
+% simplified version of RoyalFamily
+
+Document (
+  Group (
+    % Every child of a successor becomes successor
+    Forall ?Ch ?P (
+      ?Ch#_successor ::-
+        And( ?Ch#_child( _parent->?P )
+             ?P#_successor
+        )
+    )
+    _Alice#_successor
+    _Peter#_child( _parent->_Alice )
+  )
+)

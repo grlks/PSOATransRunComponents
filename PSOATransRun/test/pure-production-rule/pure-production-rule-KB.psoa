@@ -1,0 +1,10 @@
+Document (
+  Group (
+    % Pure Production Rule with ::- (instead of :- for a regular Rule)
+    % Prova translation (simplified):
+    %    world() :- hello(), assert(world()).
+    _world() ::- _hello()
+
+    _hello()
+  )
+)
