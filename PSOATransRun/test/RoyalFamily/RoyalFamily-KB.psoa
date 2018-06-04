@@ -10,16 +10,16 @@ Document (
   Group (
     % Pure production rule for the succession to the British throne:
     % A successor must be a child of a successor and both
-    % parents have to be (legitimately) married.
+    % parents have to be in (legitimated) marriage.
     Forall ?Ch ?P1 ?P2 (
       ?Ch#_successor ::-
         And( ?Ch#_child( _biological_parent->?P1 _biological_parent->?P2 )
-             _legitimately_married( _partner+>?P1 _partner+>?P2 )
+             _legitimated_marriage( _partner+>?P1 _partner+>?P2 )
              ?P1#_successor
         )
     )
     _Alice#_successor
-    _legitimately_married( _partner+>_Alice _partner+>_Bob )
+    _legitimated_marriage( _partner+>_Alice _partner+>_Bob )
     _Peter#_child( _biological_parent->_Alice _biological_parent->_Bob )
   )
 )

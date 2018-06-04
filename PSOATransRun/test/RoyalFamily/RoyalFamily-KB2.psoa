@@ -1,5 +1,5 @@
 Document (
   Group (
-    _legitimately_married( _partner+>_Alice _partner+>_Bob )
+    _legitimated_marriage( _partner+>_Alice _partner+>_Bob )
   )
 )

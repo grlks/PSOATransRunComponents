@@ -6,7 +6,7 @@ Document (
     Forall ?Ch ?P1 ?P2 (
       ?Ch#_successor ::-
         And( ?Ch#_child( _biological_parent->?P1 _biological_parent->?P2 )
-             _legitimately_married( _partner+>?P1 _partner+>?P2 )
+             _legitimated_marriage( _partner+>?P1 _partner+>?P2 )
              ?P1#_successor
         )
     )
