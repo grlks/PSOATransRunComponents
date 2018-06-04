@@ -1,0 +1,3 @@
+And( ?P#_successor
+     _Peter#_child( _person->?P )
+)
