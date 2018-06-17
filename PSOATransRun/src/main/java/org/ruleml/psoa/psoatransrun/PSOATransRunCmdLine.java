@@ -280,6 +280,7 @@ public class PSOATransRunCmdLine {
 							// This is not really a query. The KB should be extended by
 							// a new KB file
 							inputKBPath = query.substring(7);
+							String kbSnippetKey = inputKBPath;
 
 							// Print input PSOA KB if requested
 							if (showOrigKB) {
@@ -296,9 +297,14 @@ public class PSOATransRunCmdLine {
 							}
 							
 							// Load KB file
-							system.loadKBFromFile(inputKBPath, true);
+							system.loadKBFromFile(inputKBPath, kbSnippetKey);
 							println("KB Loaded. Enter Queries:");
 							println();
+						} else if (query.startsWith("remove")) {
+							// This is not really a query. The KB should be reduced
+							// by unloading a KB file
+							String kbSnippetKey = query.substring(7);
+							system.unloadKB(kbSnippetKey);
 						} else {
 							QueryResult result = system.executeQuery(query, getAllAnswers);
 							printQueryResult(result, getAllAnswers, sc);
@@ -328,10 +334,6 @@ public class PSOATransRunCmdLine {
 		finally {
 			system.shutdown();
 		}
-	}
-	
-	private static void loadKB(PSOATransRun system, String inputKBPath, boolean showOrigKB, boolean extendExistingKB) {
-
 	}
 
 	private static void printQueryResult(QueryResult result,

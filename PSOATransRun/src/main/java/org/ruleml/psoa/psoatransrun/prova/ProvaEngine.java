@@ -66,6 +66,8 @@ public class ProvaEngine extends ExtendableKBEngine {
 			}
 			else
 				m_transKBFile = tmpFile("tmp-", ".prova");
+			// create a new Prova instance
+			m_communicator = new ProvaCommunicatorImpl(kAgent, kPort, null, ProvaCommunicatorImpl.SYNC);
 		}
 		catch (IOException e)
 		{
@@ -80,7 +82,7 @@ public class ProvaEngine extends ExtendableKBEngine {
 	}
 
 	@Override
-	public void loadKB(String kb, boolean extendExistingKB) {
+	public void loadKB(String kb, String key) {
 		// An KB file is not needed by Prova!
 		if (false) {
 			try(PrintWriter writer = new PrintWriter(m_transKBFile))
@@ -96,16 +98,16 @@ public class ProvaEngine extends ExtendableKBEngine {
 		BufferedReader kbBuffer = new BufferedReader( new StringReader(kb));
 
 		try {
-			if (extendExistingKB) {
-				// extend an existing kb with new data
-				m_communicator.consultSync(kbBuffer, "", new Object[]{});
-			} else {
-				// create a new Prova instance
-				m_communicator = new ProvaCommunicatorImpl(kAgent, kPort, kbBuffer, ProvaCommunicatorImpl.SYNC);
-			}
+			// extend an existing kb with new data
+			m_communicator.consultSync(kbBuffer, key, new Object[]{});
 		} catch (Exception e) {
 			throw new PSOATransRunException(e);
 		}
+	}
+	
+	@Override
+	public void unloadKB(String key) {
+		m_communicator.unconsultSync(key);
 	}
 
 	/**

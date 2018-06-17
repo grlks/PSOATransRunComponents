@@ -6,10 +6,11 @@ package org.ruleml.psoa.psoatransrun.engine;
  * 
  */
 public abstract class ExtendableKBEngine extends ReusableKBEngine {
-	public abstract void loadKB(String kb, boolean extendExistingKB);
+	public abstract void loadKB(String kb, String key);
+	public abstract void unloadKB(String key);
 	
 	@Override
 	public void loadKB(String kb) {
-		loadKB(kb, false);
+		loadKB(kb, "");
 	}
 }
