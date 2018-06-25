@@ -39,9 +39,22 @@
 	<dependency>
 		<groupId>ws.prova</groupId>
 		<artifactId>ws.prova.compact</artifactId>
-		<version>[3.2.1,3.2.2]</version>
+		<version>3.2.1</version>
 	</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+			<id>prova</id>
+			<name>Prova repository</name>
+			<url>http://prova.ws/maven2</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 	<build>
 		<defaultGoal>install</defaultGoal>
 		<finalName>PSOATransRun</finalName>
