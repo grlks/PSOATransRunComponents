@@ -276,10 +276,10 @@ public class PSOATransRunCmdLine {
 					
 					String query = sc.nextLine();
 					try {
-						if (query.startsWith("import")) {
+						if (query.startsWith("consult")) {
 							// This is not really a query. The KB should be extended by
 							// a new KB file
-							inputKBPath = query.substring(7);
+							inputKBPath = query.substring(8);
 							String kbSnippetKey = inputKBPath;
 
 							// Print input PSOA KB if requested
@@ -300,10 +300,10 @@ public class PSOATransRunCmdLine {
 							system.loadKBFromFile(inputKBPath, kbSnippetKey);
 							println("KB Loaded. Enter Queries:");
 							println();
-						} else if (query.startsWith("remove")) {
+						} else if (query.startsWith("unconsult")) {
 							// This is not really a query. The KB should be reduced
 							// by unloading a KB file
-							String kbSnippetKey = query.substring(7);
+							String kbSnippetKey = query.substring(10);
 							system.unloadKB(kbSnippetKey);
 						} else {
 							QueryResult result = system.executeQuery(query, getAllAnswers);
