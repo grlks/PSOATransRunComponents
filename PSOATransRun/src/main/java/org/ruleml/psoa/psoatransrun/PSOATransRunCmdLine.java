@@ -191,9 +191,9 @@ public class PSOATransRunCmdLine {
 				}
                 else if (prologBackend.equalsIgnoreCase("prova") || prologBackend.equalsIgnoreCase("prova-tabling"))
                 {
-                    if (lang.equalsIgnoreCase("prova-tabling"))
-                        provaTabling = true;
                     // TODO merge conflict
+                    //if (prologBackend.equalsIgnoreCase("prova-tabling"))
+                    //    provaTabling = true;
                     // PrologTranslator.Config transConfig = new PrologTranslator.Config(provaTabling);
                     ProvaEngine.Config engineConfig = new ProvaEngine.Config();
                     engineConfig.transKBPath = transKBPath;

@@ -18,10 +18,10 @@ import org.ruleml.psoa.psoatransrun.SubstitutionSet;
 import org.ruleml.psoa.psoatransrun.engine.ReusableKBEngine;
 import org.ruleml.psoa.psoatransrun.engine.EngineConfig;
 
-import ws.prova.api2.ProvaCommunicator;
-import ws.prova.api2.ProvaCommunicatorImpl;
-import ws.prova.exchange.ProvaSolution;
-import ws.prova.parser2.ProvaParsingException;
+import org.provarules.api2.ProvaCommunicator;
+import org.provarules.api2.ProvaCommunicatorImpl;
+import org.provarules.exchange.ProvaSolution;
+import org.provarules.parser2.ProvaParsingException;
 
 public class ProvaEngine extends ReusableKBEngine {
 	private File m_transKBFile;
@@ -169,6 +169,7 @@ public class ProvaEngine extends ReusableKBEngine {
 	@Override
 	public void shutdown() {
 		// FIXME: difference between m_communicator.stop() and m_communicator.shutdown()?
-		m_communicator.stop();
+		// FIXME: NullPointerException with prova version 3.3.2
+		//m_communicator.stop();
 	}
 }

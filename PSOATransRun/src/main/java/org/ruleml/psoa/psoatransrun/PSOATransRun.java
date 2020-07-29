@@ -103,6 +103,11 @@ public class PSOATransRun {
 		{
 			systemInstantiation = "[PSOA2Prolog,SWIProlog]";
 		}
+		else if ((lang == null || lang.equalsIgnoreCase("prolog")) &&
+			    (prologBackend.equalsIgnoreCase("prova") || prologBackend.equalsIgnoreCase("prova-tabling")))
+		{
+			systemInstantiation = "[PSOA2Prolog,Prova]";
+		}
 		else if (lang.equalsIgnoreCase("tptp")) 
 		{
 			systemInstantiation = "[PSOA2TPTP,VampirePrime]";
