@@ -183,8 +183,13 @@ formula
     |   ^(OR formula+)
     |   FALSITY
     |   ^(EXISTS VAR_ID+ formula)
+    |   naf_formula
     |   atomic
     |   external
+    ;
+
+naf_formula
+    :   ^(NAF formula)
     ;
 
 atomic
@@ -246,6 +251,7 @@ psoa[boolean isAtomic]
     -> { !isAtomic || 
          (   m_dynamic 
           && !m_KBInfo.hasHeadOnlyVariables()
+	  && $type.tree.getType() != VAR_ID
           && m_KBInfo.isRelational($type.tree)) }?
           ^(PSOA ^(INSTANCE $type) tuple* slot*)
     // differentiated static objectification for psoa terms in rule conditions or queries

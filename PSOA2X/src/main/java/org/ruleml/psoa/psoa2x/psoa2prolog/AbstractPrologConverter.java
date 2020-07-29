@@ -19,7 +19,7 @@ public abstract class AbstractPrologConverter extends PrologTermLangConverter {
 	{
 		// Taken from W3C RIF-DTB library
 		s_builtInMap.put("http://www.w3.org/2007/rif-builtin-predicate#numeric-equal", "\'=:=\'");
-		s_builtInMap.put("http://www.w3.org/2007/rif-builtin-predicate#numeric-not-equal", "\'=\\=\'");
+		s_builtInMap.put("http://www.w3.org/2007/rif-builtin-predicate#numeric-not-equal", "\'=\\\\=\'");
 		s_builtInMap.put("http://www.w3.org/2007/rif-builtin-predicate#numeric-greater-than", "\'>\'");
 		s_builtInMap.put("http://www.w3.org/2007/rif-builtin-predicate#numeric-greater-than-or-equal", "\'>=\'");
 		s_builtInMap.put("http://www.w3.org/2007/rif-builtin-predicate#numeric-less-than", "\'<\'");
@@ -35,7 +35,7 @@ public abstract class AbstractPrologConverter extends PrologTermLangConverter {
 		s_builtInMap.put("http://www.w3.org/2007/rif-builtin-function#numeric-mod", "rem");
 		
 		// Taken from ISO Prolog library
-		// Functions
+		// Numeric Functions
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#add", "\'+\'");     // XSB's special character tokens
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#sub", "\'-\'");     // replaced with
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#mul", "\'*\'");     // short names
@@ -58,16 +58,19 @@ public abstract class AbstractPrologConverter extends PrologTermLangConverter {
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#exp", "exp");
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#log", "log");		
 			
-		// Predicates
+		// Numeric Predicates
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#integer", "integer");  // Test if integer
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#float", "float");  // Test if shortcut or xs:double float number (represented as double) [Currently redundant because of above same-named coerce]
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#number", "number");  // Test if number
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#eq", "\'=:=\'");                // XSB's special character tokens ...
-		s_builtInMap.put("https://www.iso.org/standard/21413.html#not_eq", "\'=\\=\'");           //
+		s_builtInMap.put("https://www.iso.org/standard/21413.html#not_eq", "\'=\\\\=\'");           //
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#greater_than", "\'>\'");        //
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#greater_than_or_eq", "\'>=\'"); //
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#less_than", "\'<\'");           //
 		s_builtInMap.put("https://www.iso.org/standard/21413.html#less_than_or_eq", "\'=<\'");    // ... renamed like for functions above
+		
+		// Generic inequality
+		s_builtInMap.put("https://www.iso.org/standard/21413.html#generic_not_eq", "\'\\\\=\'");
 		
 		// Taken from XSB Prolog standard module
 		s_builtInMap.put("http://xsb.sourceforge.net/manual1/manual1.pdf#datime", "datime");              // XSB's datime and local_datime predicates

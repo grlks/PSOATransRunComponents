@@ -31,7 +31,15 @@ public abstract class TranslatorConfig {
 		m_transConfig.omitMemtermInNegativeAtoms = omitMemtermInNegativeAtoms;
 	}
 	
-	public void setReconstruct(boolean reconstruct) {
+	public void setForallWrap(boolean forallWrap) {
+		m_transConfig.forallWrap = forallWrap;
+	}
+	
+	public void setReconstruct(boolean reconstruct) {  // Reconstruct underscores for local constants 
 		m_parserConfig.reconstruct = reconstruct;
+	}
+	
+	public void setLTNFFinding(boolean ltnfFinding) {  // Activate findings for atoms not in left-tuple normal form
+		m_parserConfig.ltnfFinding = ltnfFinding;	
 	}
 }

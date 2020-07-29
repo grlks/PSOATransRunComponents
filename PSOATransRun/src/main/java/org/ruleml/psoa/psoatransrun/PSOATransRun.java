@@ -85,6 +85,31 @@ public class PSOATransRun {
 		throw new PSOATransRunException("Unknown target language: " + targetLang);
 	}
 	
+	/****
+	 * Returns the system name of PSOATransRun
+	 * 
+	 * @param lang   language name
+	 * */
+	public static String getSystemName(String lang, String prologBackend)
+	{
+		String systemInstantiation = new String();
+		if ((lang == null || lang.equalsIgnoreCase("prolog")) && 
+				(prologBackend == null || prologBackend.equalsIgnoreCase("xsb"))) 
+		{
+			systemInstantiation = "[PSOA2Prolog,XSBProlog]";
+		}
+		else if ((lang == null || lang.equalsIgnoreCase("prolog")) && 
+				prologBackend.equalsIgnoreCase("swi"))
+		{
+			systemInstantiation = "[PSOA2Prolog,SWIProlog]";
+		}
+		else if (lang.equalsIgnoreCase("tptp")) 
+		{
+			systemInstantiation = "[PSOA2TPTP,VampirePrime]";
+		}
+		return "PSOATransRun" + "1.4.5" + systemInstantiation;
+	}
+	
 	/***
 	 * Set whether to print translator output for KBs and queries
 	 * 

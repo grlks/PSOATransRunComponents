@@ -7,8 +7,9 @@ import org.ruleml.psoa.psoa2x.common.Translator;
 import org.ruleml.psoa.psoa2x.psoa2prolog.PrologTranslator;
 import org.ruleml.psoa.psoa2x.psoa2tptp.TPTPTranslator;
 import org.ruleml.psoa.psoatransrun.engine.ExecutionEngine;
-import org.ruleml.psoa.psoatransrun.prolog.XSBEngine;
 import org.ruleml.psoa.psoatransrun.prova.ProvaEngine;
+import org.ruleml.psoa.psoatransrun.prolog.SWIEngine;
+import org.ruleml.psoa.psoatransrun.prolog.XSBEngine;
 import org.ruleml.psoa.psoatransrun.test.TestSuite;
 import org.ruleml.psoa.psoatransrun.tptp.VampirePrimeEngine;
 
@@ -29,6 +30,7 @@ public class PSOATransRunCmdLine {
 				new LongOpt("help", LongOpt.NO_ARGUMENT, null, '?'),
 				new LongOpt("longhelp", LongOpt.NO_ARGUMENT, null, '~'),
 				new LongOpt("targetLang", LongOpt.REQUIRED_ARGUMENT, null, 'l'),
+				new LongOpt("backend", LongOpt.REQUIRED_ARGUMENT, null, 'b'),
 				new LongOpt("input", LongOpt.REQUIRED_ARGUMENT, null, 'i'),
 				new LongOpt("query", LongOpt.REQUIRED_ARGUMENT, null, 'q'),
 				new LongOpt("explicitLocalConstants", LongOpt.NO_ARGUMENT, null, 'c'),
@@ -37,23 +39,26 @@ public class PSOATransRunCmdLine {
 				new LongOpt("echoInput", LongOpt.NO_ARGUMENT, null, 'e'),
 				new LongOpt("printTrans", LongOpt.NO_ARGUMENT, null, 'p'),
 				new LongOpt("outputTrans", LongOpt.REQUIRED_ARGUMENT, null, 'o'),
-				new LongOpt("xsbfolder", LongOpt.REQUIRED_ARGUMENT, null, 'x'),
+				new LongOpt("prologFolder", LongOpt.REQUIRED_ARGUMENT, null, 'x'),
 				new LongOpt("allAns", LongOpt.NO_ARGUMENT, null, 'a'),
 				new LongOpt("timeout", LongOpt.REQUIRED_ARGUMENT, null, 'm'),
 				new LongOpt("staticOnly", LongOpt.NO_ARGUMENT, null, 's'),
 				new LongOpt("undiff", LongOpt.NO_ARGUMENT, null, 'u'),
 				new LongOpt("verbose", LongOpt.NO_ARGUMENT, null, 'v'),
 				new LongOpt("omitNegMem", LongOpt.NO_ARGUMENT, null, 'z'),
-				new LongOpt("dense", LongOpt.NO_ARGUMENT, null, 'd')
+				new LongOpt("dense", LongOpt.NO_ARGUMENT, null, 'd'),
+				new LongOpt("fAllWrap", LongOpt.NO_ARGUMENT, null, 'f'),
+				new LongOpt("checkLTNF", LongOpt.NO_ARGUMENT, null, 'k')
 		};
 
-		Getopt optionsParser = new Getopt("", args, "?l:i:q:tn:epo:x:am:csuvzd", opts);
+		Getopt optionsParser = new Getopt("", args, "?l:i:b:q:tn:epo:x:am:csuvzdfk", opts);
 
 		boolean outputTrans = false, showOrigKB = false, getAllAnswers = false, 
 				dynamicObj = true, omitNegMem = false, differentiated = true,
 				isTest = false, dense = false, verbose = false, reconstruct = true,
-				provaTabling = false;
-		String inputKBPath = null, inputQueryPath = null, lang = null, transKBPath = null, xsbPath = null;
+				provaTabling = false, fAllWrap = false, ltnfFinding = false;
+		String inputKBPath = null, inputQueryPath = null, lang = null, transKBPath = null,
+			   prologPath = null, prologBackend = null;
 		int timeout = -1, numRuns = 1;
 		
 		for (int opt = optionsParser.getopt(); opt != -1; opt = optionsParser
@@ -67,6 +72,9 @@ public class PSOATransRunCmdLine {
 				return;
 			case 'l':
 				lang = optionsParser.getOptarg();
+				break;
+			case 'b':
+				prologBackend = optionsParser.getOptarg();
 				break;
 			case 'd':
 				dense = true;
@@ -109,7 +117,7 @@ public class PSOATransRunCmdLine {
 				transKBPath = optionsParser.getOptarg();
 				break;
 			case 'x':
-				xsbPath = optionsParser.getOptarg();
+				prologPath = optionsParser.getOptarg();
 				break;
 			case 'a':
 				getAllAnswers = true;
@@ -126,10 +134,19 @@ public class PSOATransRunCmdLine {
 			case 'z':
 				omitNegMem = true;
 				break;
+			case 'f':
+				fAllWrap = true;
+				break;
+			case 'k':
+			    ltnfFinding = true;
+			    break;
 			default:
 				assert false;
 			}
 		}
+		
+		// Display system name
+		println(PSOATransRun.getSystemName(lang, prologBackend));
 		
 		// Check whether input KB file / directory has been specified
 		if (inputKBPath == null) {
@@ -140,52 +157,65 @@ public class PSOATransRunCmdLine {
 		Translator translator = null;
 		ExecutionEngine engine = null;
 
-		// Display version number
-		println("PSOATransRun 1.3.2-b");  // TODO: Define method in PSOATransRun class, called here to return version		
-				
 		try {
 			if (lang == null || lang.equalsIgnoreCase("prolog"))
 			{
 				PrologTranslator.Config transConfig = new PrologTranslator.Config();
 				transConfig.setDynamicObj(dynamicObj);
 				transConfig.setOmitMemtermInNegativeAtoms(omitNegMem);
+				transConfig.setForallWrap(fAllWrap);
 				transConfig.setDifferentiateObj(differentiated);
 				transConfig.setReconstruct(reconstruct);
+				transConfig.setLTNFFinding(ltnfFinding);
 				translator = new PrologTranslator(transConfig);
 				
-				XSBEngine.Config engineConfig = new XSBEngine.Config();
-				engineConfig.transKBPath = transKBPath;
-				engineConfig.xsbFolderPath = xsbPath;
-				engine = new XSBEngine(engineConfig);
+				if (prologBackend == null || prologBackend.equalsIgnoreCase("xsb"))
+				{
+					XSBEngine.Config engineConfig = new XSBEngine.Config();
+					engineConfig.transKBPath = transKBPath;
+					engineConfig.xsbFolderPath = prologPath;
+					engine = new XSBEngine(engineConfig);
 				
-				if (timeout > 0)
-					printErrln("Ignore -t option: only applicable for the target language TPTP");
-			}
-			else if (lang.equalsIgnoreCase("prova") || lang.equalsIgnoreCase("prova-tabling"))
-			{
-				if (lang.equalsIgnoreCase("prova-tabling"))
-					provaTabling = true;
-				PrologTranslator.Config transConfig = new PrologTranslator.Config(provaTabling);
-				transConfig.setDynamicObj(dynamicObj);
-				transConfig.setOmitMemtermInNegativeAtoms(omitNegMem);
-				transConfig.setDifferentiateObj(differentiated);
-				transConfig.setReconstruct(reconstruct);
-				translator = new PrologTranslator(transConfig);
+					if (timeout > 0)
+						printErrln("Ignore -t option: only applicable for the target language TPTP");
+				}	
+				else if (prologBackend.equalsIgnoreCase("swi"))
+				{
+					SWIEngine.Config engineConfig = new SWIEngine.Config();
+					engineConfig.transKBPath = transKBPath;
+					engineConfig.swiFolderPath = prologPath;
+					engine = new SWIEngine(engineConfig);
 				
-				ProvaEngine.Config engineConfig = new ProvaEngine.Config();
-				engineConfig.transKBPath = transKBPath;
-				engine = new ProvaEngine(engineConfig);
-				
-				if (timeout > 0)
-					printErrln("Ignore -t option: only applicable for the target language TPTP");
+					if (timeout > 0)
+						printErrln("Ignore -t option: only applicable for the target language TPTP");
+				}
+                else if (prologBackend.equalsIgnoreCase("prova") || prologBackend.equalsIgnoreCase("prova-tabling"))
+                {
+                    if (lang.equalsIgnoreCase("prova-tabling"))
+                        provaTabling = true;
+                    // TODO merge conflict
+                    // PrologTranslator.Config transConfig = new PrologTranslator.Config(provaTabling);
+                    ProvaEngine.Config engineConfig = new ProvaEngine.Config();
+                    engineConfig.transKBPath = transKBPath;
+                    engine = new ProvaEngine(engineConfig);
+
+                    if (timeout > 0)
+                        printErrln("Ignore -t option: only applicable for the target language TPTP");
+                }
+				else
+				{
+					printErrlnAndExit("Unsupported Prolog backend: ", prologBackend);
+				}
 			}
 			else if (lang.equalsIgnoreCase("tptp"))
 			{
 				TPTPTranslator.Config transConfig = new TPTPTranslator.Config();
 				transConfig.setDynamicObj(dynamicObj);
 				transConfig.setOmitMemtermInNegativeAtoms(omitNegMem);
+				transConfig.setForallWrap(fAllWrap);
 				transConfig.setDifferentiateObj(differentiated);
 				transConfig.setReconstruct(reconstruct);
+				transConfig.setLTNFFinding(ltnfFinding);
 				translator = new TPTPTranslator(transConfig);
 				VampirePrimeEngine.Config engineConfig = new VampirePrimeEngine.Config();
 				if (timeout > 0)
@@ -193,8 +223,10 @@ public class PSOATransRunCmdLine {
 				engineConfig.transKBPath = transKBPath;
 				engine = new VampirePrimeEngine(engineConfig);
 				
-				if (xsbPath != null)
-					printErrln("Ignore -x option: only applicable for the target language Prolog");
+				if (prologPath != null)
+					printErrln("Ignore -x option: only applicable for the target language \"prolog\"");
+				if (prologBackend != null)
+					printErrln("Ignore -b option: only applicable for the target language \"prolog\"");
 			}
 			else
 			{
@@ -215,14 +247,12 @@ public class PSOATransRunCmdLine {
 				TestSuite ts = new TestSuite(inputKBPath, system, numRuns, verbose);
 				ts.run();
 				ts.outputSummary();
-				return;
+				System.exit(0);
 			}
 			catch (PSOATransRunException e)
 			{
 				printErrlnAndExit(e.getMessage());
 			}
-			// TestSuite already calls system.shutdown(), hence
-			// no finally block is needed
 		}
 		
 		try {
@@ -371,17 +401,22 @@ public class PSOATransRunCmdLine {
 		println("  -c,--explicitLocalConstants  Require explicit underscores for local constants");
 		println("  -p,--printTrans   Print translated KB and queries to standard output");
 		println("  -o,--outputTrans  Save translated KB to the designated file");
-		println("  -x,--xsbfolder    Specifies XSB installation folder. The default path is ");
-		println("                    obtained from the environment variable XSB_DIR");
+		println("  -l,--targetLang   Translation target language (currently support");
+		println("                    \"prolog\" (default) and \"tptp\")");
+		println("  -b,--backend      Backend for target language \"prolog\" (currently support");
+		println("                    \"xsb\" (default), \"swi\" and \"prova\")");
+		println("  -x,--prologFolder Specifies Prolog installation folder. The default path is ");
+		println("                    obtained from the environment variable XSB_DIR for XSB Prolog,");
+		println("                    or from default install locations for SWI Prolog");
 		println("  -u,--undiff       Perform undifferentiated objectification");
 		println("  -s,--staticOnly   Perform static objectification only");
 		println("  -d,--denseErrorMsgs  Display dense error messages");
+		println("  -f,--fAllWrap     Turn warning into error upon discovery of unquantified free variables in clauses");
+		println("  -k,--checkLTNF    Print findings about atoms not in left tuple normal form (LTNF)");
 		
 		if (isLong)
 		{
 			println("     --longhelp     Print the help message, including commands for internal use");
-			println("  -l,--targetLang   Translation target language (currently support");
-			println("                    \"prolog\" and \"tptp\")");
 			println("  -t,--test         Run PSOATransRun tests (-i specifies the directory");
 			println("                    for the test suite)");
 			println("  -n,--numRuns      Number of runs for each test case");

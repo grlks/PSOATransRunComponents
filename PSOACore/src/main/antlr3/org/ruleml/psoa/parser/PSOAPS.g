@@ -28,14 +28,14 @@ tokens
 @header
 {
     package org.ruleml.psoa.parser;
-    
+
     import java.util.List;
     import java.util.ArrayList;
     import java.util.Set;
     import java.util.HashSet;
     import java.util.Map;
     import java.util.HashMap;
-    
+
     import org.ruleml.psoa.transformer.PSOARuntimeException;
 }
 
@@ -51,20 +51,20 @@ tokens
     private ParserConfig m_config;
     private static Set<String> s_numberTypeIRIs = new HashSet();
     private static String s_stringIRI = "http://www.w3.org/2001/XMLSchema#string";
-    
+
     static
     {
        s_numberTypeIRIs.add("http://www.w3.org/2001/XMLSchema#integer");
        s_numberTypeIRIs.add("http://www.w3.org/2001/XMLSchema#double");
        s_numberTypeIRIs.add("http://www.w3.org/2001/XMLSchema#long");
     }
-    
+
     private static boolean fastStringEquals(String s1, String s2)
     {
         return s1.hashCode() == s2.hashCode() && s1.equals(s2);
     }
-    
-    /** 
+
+    /**
      * Get the full IRI form of an IRI prefix
     */
     protected String getNamespace(String prefix)
@@ -72,11 +72,11 @@ tokens
     	String ns = m_namespaceTable.get(prefix);
     	if (ns == null)
     		throw new PSOARuntimeException("Namespace prefix " + prefix + " used but not defined");
-    		
+
     	return ns;
     }
-        
-    /** 
+
+    /**
      * Set the full IRI of an IRI prefix
     */
 	protected void setNamespace(String ns, String iri) {
@@ -86,15 +86,15 @@ tokens
 			throw new PSOARuntimeException("Redefinition of namespace prefix " + ns);
 		}
 	}
-	
-	/** 
+
+	/**
      * Get full IRI from a namespace-prefixed IRI
     */
 	protected String getFullIRI(String ns, String localName)
 	{
 		return getNamespace(ns) + localName;
 	}
-    
+
     public Map<String, String> getNamespaceTable()
     {
     	return m_namespaceTable;
@@ -109,7 +109,7 @@ tokens
 	{
 		return m_localConsts;
 	}
-	
+
     private CommonTree getTupleTree(List list_terms, int length)
     {
         CommonTree root = (CommonTree)adaptor.nil();
@@ -117,16 +117,16 @@ tokens
             adaptor.addChild(root, list_terms.get(i));
         return root;
     }
-    
+
     private String getStrValue(String str)
     {
         return str.substring(1, str.length() - 1);
     }
-    
+
     public void setParserConfig(ParserConfig config) {
     	m_config = config;
     }
-    
+
     public void checkPrecedingWhitespace() {
     	if (input.get(input.index() - 1).getType() != WHITESPACE) {
     		throw new PSOARuntimeException("Whitespace is expected before " + input.get(input.index()).getText());
@@ -160,7 +160,7 @@ prefix
     ;
 
 importDecl
-    :   IMPORT LPAR kb=IRI_REF (pf=IRI_REF)? RPAR 
+    :   IMPORT LPAR kb=IRI_REF (pf=IRI_REF)? RPAR
     	{
 			String[] importDoc = new String[2];
 			importDoc[0] = $kb.text;
@@ -207,11 +207,16 @@ formula returns [boolean isValidHead, boolean isAtomic]
         -> FALSITY
     |   EXISTS variable+ LPAR f=formula RPAR { } // $isValidHead = $f.isAtomic; }
         -> ^(EXISTS["EXISTS"] variable+ $f)
+    |   naf_formula
     |   atomic { $isAtomic = true; } -> atomic
     |   (external_term { $isValidHead = false; } -> external_term)
         (psoa_rest { $isAtomic = true; } -> ^(PSOA $formula psoa_rest))?
     ;
-    
+
+naf_formula
+    :   NAF LPAR formula RPAR-> ^(NAF["NAF"] formula)
+    ;
+
 atomic
 @after
 {
@@ -237,31 +242,129 @@ external_term
     ;
 
 internal_term returns [boolean isSimple]
-@init { $isSimple = true; }
+scope
+{
+    boolean inLTNF;
+    int line;
+}
+@init
+{
+    $isSimple = true;
+    $internal_term::inLTNF = true;
+    $internal_term::line = input.LT(1).getLine();
+}
+@after
+{
+    if (m_config.ltnfFinding && !$internal_term::inLTNF)
+    {
+       System.out.println("Finding: Not in left-tuple normal form (LTNF): " + $internal_term.text + " at line " + $internal_term::line);
+    }
+}
     :   (simple_term -> simple_term)
-        (LPAR tuples_and_slots? RPAR { $isSimple = false; }
+        (LPAR (tuples_and_slots { $internal_term::inLTNF &= $tuples_and_slots.inLTNF; })? RPAR { $isSimple = false; }
          -> ^(PSOA ^(INSTANCE $internal_term) tuples_and_slots?))?
-        (psoa_rest { $isSimple = false; } -> ^(PSOA $internal_term psoa_rest))*
+        (psoa_rest { $isSimple = false; $internal_term::inLTNF &= $psoa_rest.inLTNF; } -> ^(PSOA $internal_term psoa_rest))*
     ;
 
-psoa_rest
-    :   INSTANCE simple_term (LPAR tuples_and_slots? RPAR)?
+psoa_rest returns [boolean inLTNF]
+scope
+{
+    boolean tsInLTNF;
+}
+@init
+{
+    $psoa_rest::tsInLTNF = true;
+}
+@after
+{
+    $inLTNF = $psoa_rest::tsInLTNF;
+}
+    :   INSTANCE simple_term (LPAR (ts=tuples_and_slots { $psoa_rest::tsInLTNF &= $ts.inLTNF; })? RPAR)?
     -> ^(INSTANCE simple_term) tuples_and_slots?
     ;
 
-tuples_and_slots
-    :   tuple+ slot* -> tuple+ slot*
-    |   terms+=term ({ checkPrecedingWhitespace(); } terms+=term)* { boolean hasSlot = false; }
-        (SLOT_ARROW first_slot_value=term { hasSlot = true; } slot* )? // Syntactic sugar for psoa terms which has only one tuple
-    -> {!hasSlot}? ^(TUPLE DEPSIGN["+"] {getTupleTree($terms, $terms.size()) } ) // single tuple
-    -> {$terms.size() == 1}?  // No tuple, only slot(s)
-        ^(SLOT DEPSIGN[$SLOT_ARROW.text.substring(0, 1)] {$terms.get(0)} $first_slot_value) slot* // slot only
-    ->  ^(TUPLE DEPSIGN["+"] {getTupleTree($terms, $terms.size() - 1)}) ^(SLOT DEPSIGN[$SLOT_ARROW.text.substring(0, 1)] {$terms.get($terms.size() - 1)} $first_slot_value) slot* // tuples and slots
+/*
+ *  tuples_and_slots parses a sequence of tuples and slots inside a PSOA atom.
+ *
+ *  The analysis considers two cases, distinguished by the presence (absence)
+ *  of an implicit tuple, a sequence of terms unenclosed by square brackets.
+ *
+ *  An implicit tuple:
+ *    * cannot be written in an atom containing conventional ("explicit") tuples,
+ *    * requires its surrounding atom to be written in left tuple normal form.
+ *
+ *  An atom without an implicit tuple allows explicit tuples and slots to be
+ *  written in any order.
+ *
+ *  tuples_and_slots keeps a list of terms called "terms" which is non-empty
+ *  if and only if:
+ *
+ *  (1) an implicit tuple is present, or,
+ *  (2) a slot is present, or,
+ *  (3) both.
+ *
+ *  The rule expands on the pattern
+ *
+ *  ALT1: term* term ( SLOT_ARROW term (tuple:"raises error unless term* is empty" | slot)* )?
+ *  ALT2: (tuple | slot)+
+ *
+ *  where the ALT1 and ALT2 alternatives are combined in a context-sensitive way.
+ *  This is done to improve error detection and reporting.
+ */
+tuples_and_slots returns [boolean inLTNF]
+scope  // Track the indexes of the earliest slot and latest tuple after it
+{
+    int firstSlotIndex;
+    int lastTupleIndex;
+}
+@init  // Set initial values satisfying lastTupleIndex < firstSlotIndex (last tuple is before first slot)
+{
+    $inLTNF = true;
+    $tuples_and_slots::firstSlotIndex = Integer.MAX_VALUE;
+    $tuples_and_slots::lastTupleIndex = 0;
+}
+@after // The sequence is in LTNF iff the first slot has lexical index greater than or equal to the last tuple index
+{
+    $inLTNF = $tuples_and_slots::firstSlotIndex >= $tuples_and_slots::lastTupleIndex;
+}
+    :   { boolean hasSlot = false; boolean hasExplTuple = false; boolean preSlotArrowTuple = false;
+          int line = input.LT(1).getLine();}
+        ((terms += term {preSlotArrowTuple = false; }) | (tuple {preSlotArrowTuple = true; hasExplTuple = true; }))
+         // If "terms" is non-empty, its contents belong to a single
+         // implicit tuple, except for the last term, which is the slot name.
+         ({ checkPrecedingWhitespace(); }
+         ((terms += term {preSlotArrowTuple = false; }) | (tuple {preSlotArrowTuple = true; hasExplTuple = true; })))*
+         ( SLOT_ARROW first_slot_value=term { $tuples_and_slots::firstSlotIndex = input.index(); hasSlot = true; } (slot | (tuple {$tuples_and_slots::lastTupleIndex = input.index(); hasExplTuple = true; }))* )?
+         {
+            if (hasSlot && preSlotArrowTuple)
+            {
+                throw new PSOARuntimeException("Explicit tuple as slot name at line " + line);
+            }
+            else if (hasExplTuple && hasSlot && $terms == null)
+            {
+                throw new PSOARuntimeException("Missing valid slot name at line " + line);
+            }
+            else if (hasExplTuple && ((!hasSlot && $terms != null) || (hasSlot && $terms.size() > 1)))
+            {
+                throw new PSOARuntimeException("Implicit tuple in atom with one or more explicit tuples at line " + line);
+            }
+        }
+    ->  {!hasSlot && hasExplTuple}?  // explicit tuples, no implicit tuple
+        tuple+
+    ->  {!hasSlot}?  // single implicit tuple
+        ^(TUPLE DEPSIGN["+"] {getTupleTree($terms, $terms.size()) } )
+    ->  {$terms.size() == 1}?  // no implicit tuple, leading slot
+        // normalize to right-slot normal form
+        tuple* ^(SLOT DEPSIGN[$SLOT_ARROW.text.substring(0, 1)] {$terms.get(0)} $first_slot_value) slot*
+    ->  // leading implicit tuple, followed by slots
+        ^(TUPLE DEPSIGN["+"] {getTupleTree($terms, $terms.size() - 1)})
+        // normalize to right-slot normal form
+        ^(SLOT DEPSIGN[$SLOT_ARROW.text.substring(0, 1)] {$terms.get($terms.size() - 1)} $first_slot_value) slot*
     ;
 
 tuple
     :   DEPSIGN LSQBR (term ({ checkPrecedingWhitespace(); } term)*)? RSQBR -> ^(TUPLE DEPSIGN term*)
-    |   LSQBR (term ({ checkPrecedingWhitespace(); } term)*)? RSQBR -> ^(TUPLE DEPSIGN["+"] term*)    // Tuples with no dependency signs are treated as dependent, may be DEPRECATED in the future 
+    |   LSQBR (term ({ checkPrecedingWhitespace(); } term)*)? RSQBR -> ^(TUPLE DEPSIGN["+"] term*)    // Tuples with no dependency signs are treated as dependent, may be DEPRECATED in the future
     ;
 
 slot
@@ -289,7 +392,7 @@ constant
 				else
 					throw new PSOARuntimeException("Incorrect constant format:" + $PN_LOCAL.text);  // Enforcing '_' prefix
             }
-            
+
             m_localConsts.add(localConstName);
         }
         -> ^(SHORTCONST LOCAL[localConstName])
@@ -318,14 +421,14 @@ variable
 answer
     : 'yes'
     | 'no'
-    | (term EQUAL term)+  
+    | (term EQUAL term)+
     ;
 
 iri returns [String fullIRI]
 	: IRI_REF -> IRI[$fullIRI = $IRI_REF.text]
 	| curie { $fullIRI = $curie.fullIRI; }
 	;
-	
+
 curie returns [String fullIRI]
 	: NAMESPACE localName=PN_LOCAL
 	-> { localName == null }? IRI[$fullIRI = getFullIRI($NAMESPACE.text, "")]
@@ -348,6 +451,7 @@ FORALL : 'Forall' ;
 EXISTS : 'Exists' ;
 AND : 'And' ;
 OR : 'Or' ;
+NAF : 'Naf';
 EXTERNAL : 'External';
 TOP : 'Top';
 
@@ -395,7 +499,7 @@ fragment PN_CHARS
     : PN_CHARS_U
     | { input.LA(2) != '>' }? => '-'
     | DIGIT
-    | '\u00B7' 
+    | '\u00B7'
     | '\u0300'..'\u036F'
     | '\u203F'..'\u2040'
     ;
@@ -418,8 +522,8 @@ fragment PN_CHARS_BASE
 fragment PLX : PERCENT | PN_LOCAL_ESC;
 fragment PERCENT : '%' HEX HEX;
 fragment HEX : DIGIT | 'A'..'F' | 'a'..'f';
-fragment PN_LOCAL_ESC 
-	:  '\\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | '\'' | '(' | ')' | '*' | '+' | ',' 
+fragment PN_LOCAL_ESC
+	:  '\\' ( '_' | '~' | '.' | '-' | '!' | '$' | '&' | '\'' | '(' | ')' | '*' | '+' | ','
 			| ';' | '=' | ':' | '/' | '?' | '#' | '@' | '%' );
 
 fragment ALPHA : 'a'..'z' | 'A'..'Z' ;
